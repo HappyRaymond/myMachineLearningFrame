@@ -7,8 +7,6 @@ from sklearn.preprocessing import StandardScaler
 np.set_printoptions(suppress=True)
 
 
-
-
 class geneticOptimizer():
     def __init__(self,NIND = 50,MAXGEN = 1000):
         self.NIND   = NIND

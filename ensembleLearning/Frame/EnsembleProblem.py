@@ -72,7 +72,7 @@ def reg_calculate(y_true, y_predict,test_sample_size,feature_size):
 def save_results(resultTitle, resultList, y_test, test_prediction, save_path):
     # 预测值不能小于0  否则会报错
     test_prediction[test_prediction < 0] = 0
-
+    
     # 计算行数，匹配 prediciton 的保存
     save_result = "/".join([save_path, 'result.csv'])
     if not os.path.exists(save_path):
