@@ -23,10 +23,12 @@ import catboost as cb
 import xgboost as xgb
 import lightgbm as lgb
 from sklearn.svm import SVR
+import BLS
 
 from sklearn.model_selection import KFold # http://cqtech.online/article/2021/9/19/28.html
 from bayes_opt import BayesianOptimization
 from sklearn.model_selection import cross_val_score
+
 ################################
 # 评估指标                      #
 ################################
@@ -120,10 +122,10 @@ def save_results(resultTitle, resultList, y_test, test_prediction, save_path):
     df["y_test"] = y_test
     df["test_prediction"] = test_prediction
     df.to_csv(save_prediction, index=False)
-        
+    
     # np.savetxt(save_prediction, np.append(np.array(y_test), test_prediction, axis=1), delimiter=',')
     # print('Save the value of prediction successfully!!')
-
+    
     return count
 
 
@@ -153,7 +155,7 @@ class myBayesianoptimazation():
     def __init__(self,modelName,X_train, X_test, y_train, y_test,random_seed = 1998,save_path = "./ensembleLearning_hk/model/",kFold = 5 ):
         self.X_train, self.X_test, self.y_train, self.y_test,self.random_seed,self.save_path,self.kFold = \
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold 
-
+        
         self.modelName = modelName
         
         
@@ -171,6 +173,7 @@ class myBayesianoptimazation():
                               'loss_function_index':(1, 5),
                               'l2_leaf_reg':(0,2),
                               'one_hot_max_size':(0,2)}
+            
         elif (self.modelName == "xgboost"):
             optimazationFun = self.XGBoost_cv_bayesianOpt
             optimazationPara = {'eta':(0,1),
@@ -179,6 +182,7 @@ class myBayesianoptimazation():
                               'reg_lambda':(0,5),
                               'reg_alpha':(0,5)
                             }
+            
         elif(self.ensemble_model == "lightgbm"):
             optimazationFun = self.Lightgbm_cv_bayesianOpt
             optimazationPara =    {'boosting_type':(0, 3+1),
@@ -213,8 +217,6 @@ class myBayesianoptimazation():
                             'subsample':(0.5,1)
                             }
             
-
-            
         elif (self.ensemble_model == "RandomForest"):
             optimazationFun = self.RandomForest_cv_bayesianOpt
             optimazationPara = {'n_estimators':(50,1000),
@@ -227,7 +229,56 @@ class myBayesianoptimazation():
             optimazationPara =    {'n_estimators':(10,200),
                             'min_samples_split':(2,10)}
             
-#         elif (self.ensemble_model == "bagging"):
+        
+        elif (self.ensemble_model == "bagging"):
+            optimazationFun = self.Bagging_cv_bayesianOpt
+            optimazationPara =    {'n_estimators':(10,400),
+                                    'max_samples':(0.5,1) ,
+                                    'max_features':(0.5,1) ,   }
+
+        elif (self.ensemble_model == "BLS"):
+            optimazationFun = self.BLS_cv_bayesianOpt
+            optimazationPara =    {'NumFea':(2,50),
+                                    'NumWin':(2,50)
+                                    'NumEnhan':(5,60)
+                                    'S':(0.4,6)
+                                    'C':(0,5)},
+        
+        elif (self.ensemble_model == "LogisticR"):
+            optimazationFun = self.LogisticR_cv_bayesianOpt
+            optimazationPara = {"penalty":(0,2),"tol":(1e-5,1e-2),"C":(0.5,2.5)}
+
+        elif (self.ensemble_model == "GPR"):
+            optimazationFun = self.GPR_cv_bayesianOpt
+            optimazationPara = {"alpha":(1e-10,1e-5),"normalize_y":(0,2)}
+
+            
+        elif (self.ensemble_model == "BayesianRidge"):
+            optimazationFun = self.BayesianRidge_cv_bayesianOpt
+            optimazationPara = {"n_iter":(100,1000),"tol":(1e-4,1e-2),"alpha_1":(1e-6,1e-2),"alpha_2":(1e-6,1e-2),"lambda_1":(1e-6,1e-2),"lambda_2":(1e-6,1e-2),"normalize":(0,2)}
+            
+            
+        elif (self.ensemble_model == "PAR"):
+            optimazationFun = self.PAR_cv_bayesianOpt
+            optimazationPara = {"C":(0.5,2.5),"tol":(1e-4,1e-2)}
+ 
+            
+        elif (self.ensemble_model == "Lr_Sgd"):
+            optimazationFun = self.Lr_Sgd_cv_bayesianOpt
+            optimazationPara = {"loss":(0,4),"penalty":(0,3),"alpha":(1e-6,1e-2),"l1_ratio":(0.01,0.6),"tol":(1e-4,1e-2),"learning_rate":(0,4),"eta0":(1e-4,1e-2),"power_t":(0.1,0.5)}
+            
+        elif (self.ensemble_model == "DecisionTree"):
+            optimazationFun = self.DecisionTree_cv_bayesianOpt
+            optimazationPara = {"splitter":(0,2),"min_samples_split":(2,6),"min_samples_leaf":(1,5)}
+            
+        elif (self.ensemble_model == "LinearSvr"):
+            optimazationFun = self.LinearSvr_cv_bayesianOpt
+            optimazationPara = {"tol":(1e-6,1e-2),"C":(0.01,1.0),"loss":(0,2)}
+       
+        elif (self.ensemble_model == "KNN"):
+            optimazationFun = self.KNN_cv_bayesianOpt
+            optimazationPara = {"n_neighbors":(3,10),"weights":(0,2),"leaf_size":(15,45),"P":(0,1)}
+                       
         else:
             print("model name have error")
             return 0
@@ -782,17 +833,577 @@ class myBayesianoptimazation():
     
     
     
+
+    # ===============  Bagging =================
+#   n_estimators = [10+(5*i) for i in range(200)]
+#   max_samples = [0.7,0.8,0.9,1.0]
+#   max_features = [0.7,0.8,0.9,1.0]
+#   warm_start 热启动 这个参数用于从上一次训练的结果的基础上再次进行训练
+    def Bagging_cv_bayesianOpt(self,n_estimators,max_samples,max_features):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        
+        # 模型参数设置
+        parameter = {"warm_start":False,"n_estimators":int(n_estimators), "random_state":random_seed,"max_samples":max_samples,"max_features":max_features}
+        # 实例化模型 并训练模型
+        model = BaggingRegressor(**parameter)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+    
+   
+
+
+    # ===============  board learning system =================
+    #     NumFea = [i for i in range(2,40,4)]
+    #     NumWin = [i for i in range(5,40,5)]
+    #     NumEnhan = [i for i in range(5,60,10)]
+    #     S = [0.4,0.6,0.8,1,1.2,4]
+    #     C = [2**-30,2**-10,2**-20,2**-40,1**-30] （0,5）
+    
+    def BLS_cv_bayesianOpt(self,S,C,NumFea,NumWin,NumEnhan):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        C = [2**-30,2**-10,2**-20,2**-40,1**-30][int(C)]
+        # 模型参数设置
+        parameter = {"s":S, "C":C, "NumFea":NumFea, "NumWin":NumWin, "NumEnhan":NumEnhan}
+        # 实例化模型 并训练模型
+        Regressor = BLS.BLSregressor(s=s, C=c, NumFea=nf, NumWin=nw, NumEnhan=ne)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+     
+
+        
+        
+        
+      
+
+    # ===============  KNN =================
+    #     n_neighbors = [3,5,7,9] # 默认为5
+    #     weights = ['uniform', 'distance']
+    #     leaf_size = [25,30,35] #默认是30
+    #     P = [1,2] # 只在 wminkowski 和 minkowski 调 0,1
+    
+    def KNN_cv_bayesianOpt(self,n_neighbors,weights,leaf_size,P):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+       
+        weights = ['uniform', 'distance'][int(weights)]
+        P = [1,2][int(P)]
+        # 模型参数设置
+        paprameter = {"n_neighbors"=int(n_neighbors),"leaf_size"=int(leaf_size),"p"=int(P),"weights"=weights}
+        # 实例化模型 并训练模型
+        Regressor = KNeighborsRegressor(**paprameter)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+        
+    # ===============  LinearSvr =================
+    #      tol = [1e-5,1e-4,1e-3]
+    #      C = [1.0,1.5,0.5,2.0,0.01]
+    #      loss = ["epsilon_insensitive","squared_epsilon_insensitive"] (0,2)
+
+    
+    def LinearSvr_cv_bayesianOpt(self):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        loss = ["epsilon_insensitive","squared_epsilon_insensitive"][int(loss)]
+        # 模型参数设置
+        parameter = {"tol":tol,"C":C,"loss":loss,"random_state":random_seed}
+        # 实例化模型 并训练模型
+        Regressor = LinearSVR()
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+    
+    
+    # ===============  DecisionTree =================
+    # splitter = ["best","random"]
+    # min_samples_split = [2,3,4,5]
+    # min_samples_leaf = [1,2,3]
+    # random_state = 17
+    
+    def DecisionTree_cv_bayesianOpt(self,splitter,min_samples_split,min_samples_leaf):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        splitter = ["best","random"][int(splitter)]
+        # 模型参数设置
+        parameter = {"criterion":"mse",
+                     "splitter":splitter,
+                     "min_samples_leaf":int(min_samples_leaf),
+                     "min_samples_split":int(min_samples_split),
+                     "random_state":random_seed}
+        # 实例化模型 并训练模型
+        Regressor = DecisionTreeRegressor(**parameter)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+    
+    
+    
+    
+    # ===============  Lr_Sgd =================
+    #     loss = ["squared_loss","huber","epsilon_insensitive","squared_epsilon_insensitive"]
+    #     penalty = ["l2","l1","elasticnet"]  
+    #     alpha = [0.0001,0.001,0.0005,0.01]
+    #     l1_ratio = [0.15,0.1,0.2,0.3,0.01], default=0.5
+    #                 Elastic-Net（弹性网）混合参数，取值范围0 <= l1_ratio <= 1。
+    #                 仅在penalty='elasticnet'时使用。
+    #                 设置l1_ratio=0等同于使用L2惩罚，而设置l1_ratio=1等同于使用L1惩罚。
+    #                 对于0 < l1_ratio <1，惩罚是L1和L2的组合。
+    #     tol = [1e-3,1e-2,1e-4]
+    #     learning_rate = ["constant","optimal","invscaling","adaptive"]
+    #     eta0 = [0.01,0.015,0.005]
+    #     power_t = [0.25,0.2,0.3]
+    #     random_state = 17
+    
+    def Lr_Sgd_cv_bayesianOpt(self,l1_ratio,loss,penalty,alpha,tol,learning_rate,eta0,power_t):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        loss = ["squared_loss","huber","epsilon_insensitive","squared_epsilon_insensitive"][int(loss)]
+        penalty = ["l2","l1","elasticnet"][int(penalty)]
+        learning_rate =  ["constant","optimal","invscaling","adaptive"][int(learning_rate)]
+        
+        # 当penalty != 'elasticnet'时      设定 L1_ratio 为默认值
+        if penalty  != 'elasticnet':
+            L1_ratio = 0.5
+        # 模型参数设置
+        parameter = {"random_state"=random_seed,
+                     "warm_start"=False,
+                     "l1_ratio"=l1,
+                     "loss"=l,
+                     "penalty"=p,
+                     "alpha"=a,
+                     "tol"=t,
+                     "learning_rate"=lr,
+                     "eta0"=e,
+                     "power_t"=pt}
+        # 实例化模型 并训练模型
+        model = SGDRegressor(**parameter)
+                                                
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+    
+    
+    # ===============  Passive Aggressive Regressor =================
+    #     C = [1.0,0.5,1.5,2.0]
+    #     tol = [1e-3,1e-2,1e-4]
+    def PAR_cv_bayesianOpt(self,C,tol):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        # 模型参数设置
+        parameter = {"C":C,"tol":tol,"random_state" = random_seed}
+        # 实例化模型 并训练模型
+        Regressor = PassiveAggressiveRegressor(**parameter)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+    
+    
+    
+    
+    
+    
+    
+    # ===============  BayesianRidge =================
+    #     n_iter = [100,200,300,400,500]
+    #     tol = [1e-3,2e-3,1e-4,1e-2]
+    #     alpha_1 = [1e-6,1e-4,1e-5]
+    #     alpha_2 = [1e-6,1e-4,1e-5]
+    #     lambda_1 = [1e-6,1e-4,1e-5]
+    #     lambda_2 = [1e-6,1e-4,1e-5]
+    #     normalize = [True,False]
+    
+    def BayesianRidge_cv_bayesianOpt(self,n_iter,tol,alpha_1,alpha_2,lambda_1,lambda_2,normalize):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        normalize = [True,False][int(normalize)]
+       
+        # 模型参数设置
+        parameter = {"n_iter"=int(n_iter),
+                     "tol"=tol,
+                     "alpha_1"=alpha_1,
+                     "alpha_2"=alpha_2,
+                     "lambda_1"=lambda_1,
+                     "lambda_2"=lambda_2,
+                     "normalize"=normalize}
+        # 实例化模型 并训练模型
+        Regressor = BayesianRidge(**parameter)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+    
+    
+     
+    
+    # ===============  Gaussian Process Regressor =================
+    #     alpha = [1e-10,1e-9,1e-11,1e-8]
+    #     normalize_y = [True,False]
+
+    def GPR_cv_bayesianOpt(self,alpha,normalize_y):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        normalize_y = [True,False][int(normalize_y)]
+        
+        # 模型参数设置
+        parameter  = {alpha=alpha,normalize_y=normalize_y,random_state=random_seed}
+        # 实例化模型 并训练模型
+        Regressor = GaussianProcessRegressor(**parameter)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
+    
+    
+    
+    # ===============  LogisticRegression =================
+    #     penalty = ["l1","l2"]
+    #     tol = [1e-3,1e-4,1e-5]
+    #     C = [0.5,1,1.5,2.0]
+    
+    def LogisticR_cv_bayesianOpt(self,penalty,tol,C):
+        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        
+        penalty = ["l1","l2"][int(penalty)]
+       
+        # 模型参数设置
+        parameter = {"penalty":penalty,"tol":tol,"C":C , "warm_start":False , "random_state":random_seed , "n_jobs":-1 , "solver" :'liblinear'}
+        # 实例化模型 并训练模型
+        Regressor = LogisticRegression(**parameter)
+        # 如果kFold数值大于1 则启用 k-fold cross-validation
+        if kFold <= 1:
+            kFold = 1 
+            Regressor.fit(X_train,y_train)
+        else: 
+
+            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
+            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
+                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
+        # 计算模型在测试集上的效果
+        y_pre = Regressor.predict(X_test)
+        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
+        ObjV_i = regDict["r2"]
+
+        # 模型保存
+        resultTitle = []
+        resultList = []
+
+        for Title, Parameter in parameterDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+        for Title, Parameter in regDict.items():
+            resultTitle.append(Title)
+            resultList.append(str(Parameter))
+
+    
+        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
+        # 保存模型
+        model_path = os.path.join(save_path, 'Model')
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
+        return ObjV_i
     
     
     
 
-
+    
+################################
+# -模型定义模板如下              
+################################
+    
 #     # ===============  xxxxx =================
 
-    
+      
 #     def xxxxx_cv_bayesianOpt(self):
 #         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+          
        
 #         # 模型参数设置
        
