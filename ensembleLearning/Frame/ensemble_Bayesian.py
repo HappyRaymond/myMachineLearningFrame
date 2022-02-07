@@ -252,16 +252,13 @@ class myBayesianoptimazation():
             optimazationFun = self.GPR_cv_bayesianOpt
             optimazationPara = {"alpha":(1e-10,1e-5),"normalize_y":(0,2)}
 
-            
         elif (self.ensemble_model == "BayesianRidge"):
             optimazationFun = self.BayesianRidge_cv_bayesianOpt
             optimazationPara = {"n_iter":(100,1000),"tol":(1e-4,1e-2),"alpha_1":(1e-6,1e-2),"alpha_2":(1e-6,1e-2),"lambda_1":(1e-6,1e-2),"lambda_2":(1e-6,1e-2),"normalize":(0,2)}
             
-            
         elif (self.ensemble_model == "PAR"):
             optimazationFun = self.PAR_cv_bayesianOpt
             optimazationPara = {"C":(0.5,2.5),"tol":(1e-4,1e-2)}
- 
             
         elif (self.ensemble_model == "Lr_Sgd"):
             optimazationFun = self.Lr_Sgd_cv_bayesianOpt
