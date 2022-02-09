@@ -3,6 +3,7 @@ from sklearn.tree import DecisionTreeRegressor
 from multiprocessing import  Manager
 from sklearn import metrics
 import numpy as np
+import time
 
 import multiprocessing as mp
 from multiprocessing import Pool as ProcessPool
@@ -288,6 +289,8 @@ class myBayesianoptimazation():
 
     def catboost_cv_bayesianOpt(self,iterations, learning_rate, depth, loss_function_index,l2_leaf_reg,one_hot_max_size):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        start = time.time()
+
         lossList = ["MAE","MAPE","Poisson","Quantile","RMSE","MultiRMSE"]
         # 模型参数设置
         parameterDict = {"iterations": int(iterations), "learning_rate": learning_rate, "depth": int(depth),
@@ -312,7 +315,10 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -325,7 +331,7 @@ class myBayesianoptimazation():
             resultTitle.append(Title)
             resultList.append(str(Parameter))
 
-
+        
         count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
         # 保存模型
         model_path = os.path.join(save_path, 'Model')
@@ -344,6 +350,7 @@ class myBayesianoptimazation():
     
     def XGBoost_cv_bayesianOpt(self,eta,max_depth,subsample,reg_lambda,reg_alpha):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        start = time.time()
         # 模型参数设置
         parameterDict = {"eta": eta, "max_depth": max_depth, "subsample": subsample,"reg_lambda":reg_lambda,"reg_alpha":reg_alpha}
         # 实例化模型 并训练模型
@@ -361,7 +368,10 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -397,7 +407,7 @@ class myBayesianoptimazation():
 
     def Lightgbm_cv_bayesianOpt(self, boosting_type, n_estimators, learning_rate, subsample, subsample_freq, colsample_bytree, reg_alpha, reg_lambda):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         boosting_type_list = ["gbdt", "dart", "goss", "rf"]
 
         boosting_type = boosting_type_list[int(boosting_type)]
@@ -430,7 +440,10 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -467,7 +480,7 @@ class myBayesianoptimazation():
     
     def AdaBoost_cv_bayesianOpt(self,n_estimators,learning_rate,loss,criterion,splitter):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         lossList = ["linear", "square", "exponential"]
         criterionList = ["mse", "mae"]
         splitterList = ["best", "random"]
@@ -499,7 +512,10 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -530,6 +546,7 @@ class myBayesianoptimazation():
     
     def SVR_cv_bayesianOpt(self,kernel,degree,gamma):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
+        start = time.time()
         kernelList = ["rbf","linear","poly","sigmoid"]
         gammaList  = ["auto","scale"]
 
@@ -559,7 +576,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -595,7 +614,7 @@ class myBayesianoptimazation():
     
     def gbdt_cv_bayesianOpt(self,n_estimators,learning_rate,subsample):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         n_estimators = int(n_estimators)
 
         # 模型参数设置
@@ -616,7 +635,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -648,7 +669,7 @@ class myBayesianoptimazation():
     
     def ExtraTrees_cv_bayesianOpt(self,n_estimators,min_samples_split):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         n_estimators = int(n_estimators)
         min_samples_split = int(min_samples_split)
 
@@ -671,7 +692,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -708,7 +731,7 @@ class myBayesianoptimazation():
 
     def Lightgbm_cv_bayesianOpt(self,boosting_type,n_estimators,learning_rate,subsample,subsample_freq,reg_alpha,reg_lambda):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         boosting_type_list = ["gbdt", "dart", "goss", "rf"]
 
         boosting_type = boosting_type_list[int(boosting_type)]
@@ -741,7 +764,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -781,7 +806,7 @@ class myBayesianoptimazation():
 
     def RandomForest_cv_bayesianOpt(self,n_estimators,min_samples_split,min_samples_leaf,oob_score):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         oob_score_List = ["True", "False"]
         n_estimators = int(n_estimators)
         min_samples_split = int(min_samples_split)
@@ -806,7 +831,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -838,7 +865,7 @@ class myBayesianoptimazation():
 #   warm_start 热启动 这个参数用于从上一次训练的结果的基础上再次进行训练
     def Bagging_cv_bayesianOpt(self,n_estimators,max_samples,max_features):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         
         # 模型参数设置
         parameter = {"warm_start":False,"n_estimators":int(n_estimators), "random_state":random_seed,"max_samples":max_samples,"max_features":max_features}
@@ -856,7 +883,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -891,7 +920,7 @@ class myBayesianoptimazation():
     
     def BLS_cv_bayesianOpt(self,S,C,NumFea,NumWin,NumEnhan):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         C = [2**-30,2**-10,2**-20,2**-40,1**-30][int(C)]
         # 模型参数设置
         parameter = {"s":S, "C":C, "NumFea":NumFea, "NumWin":NumWin, "NumEnhan":NumEnhan}
@@ -910,7 +939,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -946,7 +977,7 @@ class myBayesianoptimazation():
     
     def KNN_cv_bayesianOpt(self,n_neighbors,weights,leaf_size,P):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-       
+        start = time.time()
         weights = ['uniform', 'distance'][int(weights)]
         P = [1,2][int(P)]
         # 模型参数设置
@@ -966,7 +997,10 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -997,7 +1031,7 @@ class myBayesianoptimazation():
     
     def LinearSvr_cv_bayesianOpt(self):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         loss = ["epsilon_insensitive","squared_epsilon_insensitive"][int(loss)]
         # 模型参数设置
         parameter = {"tol":tol,"C":C,"loss":loss,"random_state":random_seed}
@@ -1016,7 +1050,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -1048,7 +1084,7 @@ class myBayesianoptimazation():
     
     def DecisionTree_cv_bayesianOpt(self,splitter,min_samples_split,min_samples_leaf):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         splitter = ["best","random"][int(splitter)]
         # 模型参数设置
         parameter = {"criterion":"mse",
@@ -1071,7 +1107,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -1114,7 +1152,7 @@ class myBayesianoptimazation():
     
     def Lr_Sgd_cv_bayesianOpt(self,l1_ratio,loss,penalty,alpha,tol,learning_rate,eta0,power_t):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         loss = ["squared_loss","huber","epsilon_insensitive","squared_epsilon_insensitive"][int(loss)]
         penalty = ["l2","l1","elasticnet"][int(penalty)]
         learning_rate =  ["constant","optimal","invscaling","adaptive"][int(learning_rate)]
@@ -1149,7 +1187,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -1178,7 +1218,7 @@ class myBayesianoptimazation():
     #     tol = [1e-3,1e-2,1e-4]
     def PAR_cv_bayesianOpt(self,C,tol):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         # 模型参数设置
         parameter = {"C":C,"tol":tol,"random_state" = random_seed}
         # 实例化模型 并训练模型
@@ -1196,7 +1236,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -1236,7 +1278,7 @@ class myBayesianoptimazation():
     
     def BayesianRidge_cv_bayesianOpt(self,n_iter,tol,alpha_1,alpha_2,lambda_1,lambda_2,normalize):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         normalize = [True,False][int(normalize)]
        
         # 模型参数设置
@@ -1262,7 +1304,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -1294,7 +1338,7 @@ class myBayesianoptimazation():
 
     def GPR_cv_bayesianOpt(self,alpha,normalize_y):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         normalize_y = [True,False][int(normalize_y)]
         
         # 模型参数设置
@@ -1314,7 +1358,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
@@ -1345,7 +1391,7 @@ class myBayesianoptimazation():
     
     def LogisticR_cv_bayesianOpt(self,penalty,tol,C):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        
+        start = time.time()
         penalty = ["l1","l2"][int(penalty)]
        
         # 模型参数设置
@@ -1365,7 +1411,9 @@ class myBayesianoptimazation():
         y_pre = Regressor.predict(X_test)
         regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
         ObjV_i = regDict["r2"]
-
+        end = time.time()
+        regDict["run_times"] = end - start
+        regDict["save_path"] = save_path
         # 模型保存
         resultTitle = []
         resultList = []
