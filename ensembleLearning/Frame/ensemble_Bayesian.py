@@ -9,7 +9,9 @@ import multiprocessing as mp
 from multiprocessing import Pool as ProcessPool
 from multiprocessing.dummy import Pool as ThreadPool
 from sklearn.ensemble import RandomForestRegressor,BaggingRegressor,GradientBoostingRegressor,ExtraTreesRegressor,AdaBoostRegressor
-
+from sklearn.linear_model import LinearRegression,SGDRegressor,BayesianRidge,LogisticRegression,PassiveAggressiveRegressor,ElasticNet,Ridge,Lasso
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.gaussian_process import GaussianProcessRegressor
 import pandas as pd
 import numpy as np
 from Frame import myDataset
@@ -23,8 +25,8 @@ from sklearn.metrics import mean_absolute_error,mean_squared_error,median_absolu
 import catboost as cb
 import xgboost as xgb
 import lightgbm as lgb
-from sklearn.svm import SVR
-import BLS
+from sklearn.svm import SVR,LinearSVR
+from Frame import BLS
 
 from sklearn.model_selection import KFold # http://cqtech.online/article/2021/9/19/28.html
 from bayes_opt import BayesianOptimization
@@ -171,9 +173,8 @@ class myBayesianoptimazation():
             optimazationPara = {'iterations':(200, 2000),
                               'learning_rate':(2e-6, 1),
                               'depth':(1, 15),
-                              'loss_function_index':(1, 5),
-                              'l2_leaf_reg':(0,2),
-                              'one_hot_max_size':(0,2)}
+                              'loss_function_index':(0,5.99),
+                              'l2_leaf_reg':(0,2)}
             
         elif (self.modelName == "xgboost"):
             optimazationFun = self.XGBoost_cv_bayesianOpt
@@ -184,9 +185,9 @@ class myBayesianoptimazation():
                               'reg_alpha':(0,5)
                             }
             
-        elif(self.ensemble_model == "lightgbm"):
+        elif(self.modelName == "lightgbm"):
             optimazationFun = self.Lightgbm_cv_bayesianOpt
-            optimazationPara =    {'boosting_type':(0, 3+1),
+            optimazationPara =    {'boosting_type':(0, 3.99),
                             'n_estimators':(50, 2000),
                             'learning_rate':(1e-6, 1),
                             'subsample':(0.5, 1),
@@ -194,86 +195,86 @@ class myBayesianoptimazation():
                             'colsample_bytree':(0.5,1),
                             'reg_alpha':(0,2),
                             'reg_lambda':(0,2)}
-            
-        elif (self.ensemble_model == "Adaboost"):
+      
+        elif (self.modelName == "Adaboost"):
             optimazationFun = self.AdaBoost_cv_bayesianOpt
             optimazationPara =     {'n_estimators':(50,2000),
                              'learning_rate':(1e-6,1),
-                             'loss':(0,3),
-                             'criterion':(0,2),
-                             'splitter':(0,2)
+                             'loss':(0,2.99),
+                             'criterion':(0,1.99),
+                             'splitter':(0,1.99)
                             }
            
-        elif (self.ensemble_model == "SVR"):
+        elif (self.modelName == "SVR"):
             optimazationFun = self.SVR_cv_bayesianOpt
-            optimazationPara =    {'kernel':(0,4),
+            optimazationPara =    {'kernel':(0,3.99),
                              'degree':(2,13),
                              'gamma':(0,2),
                             }
             
-        elif (self.ensemble_model == "gbdt"):
+        elif (self.modelName == "gbdt"):
             optimazationFun = self.gbdt_cv_bayesianOpt
             optimazationPara = {'n_estimators':(50,2000),
                             'learning_rate':(1e-6,1),
                             'subsample':(0.5,1)
                             }
             
-        elif (self.ensemble_model == "RandomForest"):
+        elif (self.modelName == "RandomForest"):
             optimazationFun = self.RandomForest_cv_bayesianOpt
             optimazationPara = {'n_estimators':(50,1000),
                              'min_samples_split':(2,4),
                              'min_samples_leaf':(1,4),
-                             'oob_score':(0,2) }
+                             'oob_score':(0,1.99) }
             
-        elif (self.ensemble_model == "ExtraTrees"):
+        elif (self.modelName == "ExtraTrees"):
             optimazationFun = self.ExtraTrees_cv_bayesianOpt
             optimazationPara =    {'n_estimators':(10,200),
                             'min_samples_split':(2,10)}
             
         
-        elif (self.ensemble_model == "bagging"):
+        elif (self.modelName == "bagging"):
             optimazationFun = self.Bagging_cv_bayesianOpt
             optimazationPara =    {'n_estimators':(10,400),
                                     'max_samples':(0.5,1) ,
                                     'max_features':(0.5,1) ,   }
 
-        elif (self.ensemble_model == "BLS"):
+        elif (self.modelName == "BLS"):
             optimazationFun = self.BLS_cv_bayesianOpt
             optimazationPara =    {'NumFea':(2,50),
-                                    'NumWin':(2,50)
-                                    'NumEnhan':(5,60)
-                                    'S':(0.4,6)
-                                    'C':(0,5)},
+                                    'NumWin':(2,50),
+                                    'NumEnhan':(5,60),
+                                    'S':(0.4,6),
+                                    'C':(0,4.99)}
         
-        elif (self.ensemble_model == "LogisticR"):
+        elif (self.modelName == "LogisticR"):
             optimazationFun = self.LogisticR_cv_bayesianOpt
-            optimazationPara = {"penalty":(0,2),"tol":(1e-5,1e-2),"C":(0.5,2.5)}
+            optimazationPara = {"penalty":(0,1.99),"tol":(1e-5,1e-2),"C":(0.5,2.5)}
 
-        elif (self.ensemble_model == "GPR"):
+        elif (self.modelName == "GPR"):
             optimazationFun = self.GPR_cv_bayesianOpt
-            optimazationPara = {"alpha":(1e-10,1e-5),"normalize_y":(0,2)}
+            optimazationPara = {"alpha":(1e-10,1e-5),"normalize_y":(0,1.99)}
 
-        elif (self.ensemble_model == "BayesianRidge"):
+        elif (self.modelName == "BayesianRidge"):
             optimazationFun = self.BayesianRidge_cv_bayesianOpt
-            optimazationPara = {"n_iter":(100,1000),"tol":(1e-4,1e-2),"alpha_1":(1e-6,1e-2),"alpha_2":(1e-6,1e-2),"lambda_1":(1e-6,1e-2),"lambda_2":(1e-6,1e-2),"normalize":(0,2)}
+            optimazationPara = {"n_iter":(100,1000),"tol":(1e-4,1e-2),"alpha_1":(1e-6,1e-2),"alpha_2":(1e-6,1e-2),"lambda_1":(1e-6,1e-2),"lambda_2":(1e-6,1e-2),"normalize":(0,1.99)}
             
-        elif (self.ensemble_model == "PAR"):
+        elif (self.modelName == "PAR"):
             optimazationFun = self.PAR_cv_bayesianOpt
             optimazationPara = {"C":(0.5,2.5),"tol":(1e-4,1e-2)}
             
-        elif (self.ensemble_model == "Lr_Sgd"):
+        elif (self.modelName == "Lr_Sgd"):
             optimazationFun = self.Lr_Sgd_cv_bayesianOpt
-            optimazationPara = {"loss":(0,4),"penalty":(0,3),"alpha":(1e-6,1e-2),"l1_ratio":(0.01,0.6),"tol":(1e-4,1e-2),"learning_rate":(0,4),"eta0":(1e-4,1e-2),"power_t":(0.1,0.5)}
+            optimazationPara = {"loss":(0,3.99),"penalty":(0,2.99),"alpha":(1e-6,1e-2),"l1_ratio":(0.01,0.6),"tol":(1e-4,1e-2),"learning_rate":(0,3.99),"eta0":(1e-4,1e-2),"power_t":(0.1,0.5)}
             
-        elif (self.ensemble_model == "DecisionTree"):
+        elif (self.modelName == "DecisionTree"):
             optimazationFun = self.DecisionTree_cv_bayesianOpt
-            optimazationPara = {"splitter":(0,2),"min_samples_split":(2,6),"min_samples_leaf":(1,5)}
+            optimazationPara = {"splitter":(0,1.99),"min_samples_split":(2,6),"min_samples_leaf":(1,5)}
             
-        elif (self.ensemble_model == "LinearSvr"):
+        elif (self.modelName == "LinearSvr"):
             optimazationFun = self.LinearSvr_cv_bayesianOpt
-            optimazationPara = {"tol":(1e-6,1e-2),"C":(0.01,1.0),"loss":(0,2)}
+            optimazationPara = {"tol":(1e-6,1e-2),"C":(0.01,1.0),"loss":(0,1.99)}
        
-        elif (self.ensemble_model == "KNN"):
+        elif (self.modelName == "KNN"):
             optimazationFun = self.KNN_cv_bayesianOpt
             optimazationPara = {"n_neighbors":(3,10),"weights":(0,2),"leaf_size":(15,45),"P":(0,1)}
                        
@@ -287,7 +288,7 @@ class myBayesianoptimazation():
         object_bo.maximize(init_points = init_points,n_iter = n_iter)
         # object_bo.max() # https://zhuanlan.zhihu.com/p/131222363
 
-    def catboost_cv_bayesianOpt(self,iterations, learning_rate, depth, loss_function_index,l2_leaf_reg,one_hot_max_size):
+    def catboost_cv_bayesianOpt(self,iterations, learning_rate, depth, loss_function_index,l2_leaf_reg):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
         start = time.time()
 
@@ -295,11 +296,10 @@ class myBayesianoptimazation():
         # 模型参数设置
         parameterDict = {"iterations": int(iterations), "learning_rate": learning_rate, "depth": int(depth),
                          "loss_function": lossList[int(loss_function_index)],
-                         "l2_leaf_reg": l2_leaf_reg, "one_hot_max_size": int(one_hot_max_size),"random_seed":int(random_seed),"task_type": "CPU", "logging_level": "Silent"}
+                         "l2_leaf_reg": l2_leaf_reg,"random_seed":int(random_seed),"task_type": "CPU", "logging_level": "Silent"}
         # 实例化模型 并训练模型
         Regressor = cb.CatBoostRegressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
-        
         if kFold <= 1:
 #             print("不适用 交叉验证")
             kFold = 1 
@@ -352,7 +352,7 @@ class myBayesianoptimazation():
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
         start = time.time()
         # 模型参数设置
-        parameterDict = {"eta": eta, "max_depth": max_depth, "subsample": subsample,"reg_lambda":reg_lambda,"reg_alpha":reg_alpha}
+        parameterDict = {"eta": eta, "max_depth": int(max_depth), "subsample": subsample,"reg_lambda":reg_lambda,"reg_alpha":reg_alpha}
         # 实例化模型 并训练模型
         Regressor = xgb.XGBRegressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
@@ -419,7 +419,7 @@ class myBayesianoptimazation():
         # 模型参数设置
         parameterDict = {"boosting_type": boosting_type, "n_estimators": n_estimators,
                      "learning_rate": learning_rate,"subsample": subsample,
-                      "colsample_bytree": colsample_bytree,"max_depth":-1,
+                      "colsample_bytree":colsample_bytree,"max_depth":-1,
                      "reg_alpha": reg_alpha, "reg_lambda": reg_lambda,"objective":'regression',"random_state":random_seed}
 
         # 实例化模型 并训练模型
@@ -719,74 +719,6 @@ class myBayesianoptimazation():
     
     
 
-    # ===============  Lightgbm =================
-    # boosting_type = ["gbdt","dart","goss","rf"]  # rf 還是會報錯 所以先沒放上去
-    # n_estimators = [50,100,200,300,400,500,600,700,800,900,1000,1200,1500]
-    # learning_rate = [0.01,0.05,0.1,0.15,0.2]
-    # subsample = [1.0,0.8,0.6]
-    # subsample_freq = [0,1,2,3]
-    # colsample_bytree = [1,0.8,0.6]
-    # reg_alpha = [0,1,2]
-    # reg_lambda = [0,1,2]
-
-    def Lightgbm_cv_bayesianOpt(self,boosting_type,n_estimators,learning_rate,subsample,subsample_freq,reg_alpha,reg_lambda):
-        X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
-        start = time.time()
-        boosting_type_list = ["gbdt", "dart", "goss", "rf"]
-
-        boosting_type = boosting_type_list[int(boosting_type)]
-        n_estimators = int(n_estimators)
-        subsample_freq = int(subsample_freq)
-        
-   
-    
-        # 模型参数设置
-        parameterDict = {"boosting_type": boosting_type, "n_estimators": n_estimators,
-                     "learning_rate": learning_rate,"subsample": subsample,
-                      "colsample_bytree": colsample_bytree,"max_depth":-1,
-                     "reg_alpha": reg_alpha, "reg_lambda": reg_lambda,"objective":'regression',"random_state":random_seed}
-
-        # 实例化模型 并训练模型
-        Regressor = lgb.LGBMRegressor(**parameterDict)
-
-        
-        
-        # 如果kFold数值大于1 则启用 k-fold cross-validation
-        if kFold <= 1:
-            kFold = 1 
-            Regressor.fit(X_train,y_train)
-        else: 
-
-            folds = KFold(n_splits=kFold, shuffle=True, random_state=random_seed)
-            for fold_, (trn_idx, val_idx) in enumerate(folds.split(X_train, y_train)):
-                Regressor.fit(X_train[trn_idx],y_train[trn_idx])
-        # 计算模型在测试集上的效果
-        y_pre = Regressor.predict(X_test)
-        regDict = reg_calculate(y_test, y_pre,X_test.shape[0], X_test.shape[1])
-        ObjV_i = regDict["r2"]
-        end = time.time()
-        regDict["run_times"] = end - start
-        regDict["save_path"] = save_path
-        # 模型保存
-        resultTitle = []
-        resultList = []
-
-        for Title, Parameter in parameterDict.items():
-            resultTitle.append(Title)
-            resultList.append(str(Parameter))
-
-        for Title, Parameter in regDict.items():
-            resultTitle.append(Title)
-            resultList.append(str(Parameter))
-
-
-        count = save_results(resultTitle, resultList, y_test, y_pre, save_path)
-        # 保存模型
-        model_path = os.path.join(save_path, 'Model')
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
-        joblib.dump(Regressor, os.path.join(model_path, str(count) + ".pkl"))
-        return ObjV_i
 
     
     
@@ -868,9 +800,9 @@ class myBayesianoptimazation():
         start = time.time()
         
         # 模型参数设置
-        parameter = {"warm_start":False,"n_estimators":int(n_estimators), "random_state":random_seed,"max_samples":max_samples,"max_features":max_features}
+        parameterDict = {"warm_start":False,"n_estimators":int(n_estimators), "random_state":random_seed,"max_samples":max_samples,"max_features":max_features}
         # 实例化模型 并训练模型
-        model = BaggingRegressor(**parameter)
+        Regressor = BaggingRegressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -923,9 +855,9 @@ class myBayesianoptimazation():
         start = time.time()
         C = [2**-30,2**-10,2**-20,2**-40,1**-30][int(C)]
         # 模型参数设置
-        parameter = {"s":S, "C":C, "NumFea":NumFea, "NumWin":NumWin, "NumEnhan":NumEnhan}
+        parameterDict = {"s":S, "C":C, "NumFea":int(NumFea), "NumWin":int(NumWin), "NumEnhan":int(NumEnhan)}
         # 实例化模型 并训练模型
-        Regressor = BLS.BLSregressor(s=s, C=c, NumFea=nf, NumWin=nw, NumEnhan=ne)
+        Regressor = BLS.BLSregressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -981,9 +913,9 @@ class myBayesianoptimazation():
         weights = ['uniform', 'distance'][int(weights)]
         P = [1,2][int(P)]
         # 模型参数设置
-        paprameter = {"n_neighbors"=int(n_neighbors),"leaf_size"=int(leaf_size),"p"=int(P),"weights"=weights}
+        parameterDict = {"n_neighbors":int(n_neighbors),"leaf_size":int(leaf_size),"p":int(P),"weights":weights}
         # 实例化模型 并训练模型
-        Regressor = KNeighborsRegressor(**paprameter)
+        Regressor = KNeighborsRegressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -1029,14 +961,14 @@ class myBayesianoptimazation():
     #      loss = ["epsilon_insensitive","squared_epsilon_insensitive"] (0,2)
 
     
-    def LinearSvr_cv_bayesianOpt(self):
+    def LinearSvr_cv_bayesianOpt(self,tol,C,loss):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
         start = time.time()
         loss = ["epsilon_insensitive","squared_epsilon_insensitive"][int(loss)]
         # 模型参数设置
-        parameter = {"tol":tol,"C":C,"loss":loss,"random_state":random_seed}
+        parameterDict = {"tol":tol,"C":C,"loss":loss,"random_state":random_seed}
         # 实例化模型 并训练模型
-        Regressor = LinearSVR()
+        Regressor = LinearSVR(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -1085,15 +1017,16 @@ class myBayesianoptimazation():
     def DecisionTree_cv_bayesianOpt(self,splitter,min_samples_split,min_samples_leaf):
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
         start = time.time()
+        print(splitter,min_samples_split,min_samples_leaf)
         splitter = ["best","random"][int(splitter)]
         # 模型参数设置
-        parameter = {"criterion":"mse",
+        parameterDict = {"criterion":"mse",
                      "splitter":splitter,
                      "min_samples_leaf":int(min_samples_leaf),
                      "min_samples_split":int(min_samples_split),
                      "random_state":random_seed}
         # 实例化模型 并训练模型
-        Regressor = DecisionTreeRegressor(**parameter)
+        Regressor = DecisionTreeRegressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -1161,18 +1094,18 @@ class myBayesianoptimazation():
         if penalty  != 'elasticnet':
             L1_ratio = 0.5
         # 模型参数设置
-        parameter = {"random_state"=random_seed,
-                     "warm_start"=False,
-                     "l1_ratio"=l1,
-                     "loss"=l,
-                     "penalty"=p,
-                     "alpha"=a,
-                     "tol"=t,
-                     "learning_rate"=lr,
-                     "eta0"=e,
-                     "power_t"=pt}
+        parameterDict = {"random_state":random_seed,
+                     "warm_start":False,
+                     "l1_ratio":l1_ratio,
+                     "loss":loss,
+                     "penalty":penalty,
+                     "alpha":alpha,
+                     "tol":tol,
+                     "learning_rate":learning_rate,
+                     "eta0":eta0,
+                     "power_t":power_t}
         # 实例化模型 并训练模型
-        model = SGDRegressor(**parameter)
+        Regressor = SGDRegressor(**parameterDict)
                                                 
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
@@ -1220,9 +1153,9 @@ class myBayesianoptimazation():
         X_train, X_test, y_train, y_test,random_seed,save_path,kFold = self.getDatasetValues()
         start = time.time()
         # 模型参数设置
-        parameter = {"C":C,"tol":tol,"random_state" = random_seed}
+        parameterDict = {"C":C,"tol":tol,"random_state" : random_seed}
         # 实例化模型 并训练模型
-        Regressor = PassiveAggressiveRegressor(**parameter)
+        Regressor = PassiveAggressiveRegressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -1282,15 +1215,15 @@ class myBayesianoptimazation():
         normalize = [True,False][int(normalize)]
        
         # 模型参数设置
-        parameter = {"n_iter"=int(n_iter),
-                     "tol"=tol,
-                     "alpha_1"=alpha_1,
-                     "alpha_2"=alpha_2,
-                     "lambda_1"=lambda_1,
-                     "lambda_2"=lambda_2,
-                     "normalize"=normalize}
+        parameterDict = {"n_iter":int(n_iter),
+                     "tol":tol,
+                     "alpha_1":alpha_1,
+                     "alpha_2":alpha_2,
+                     "lambda_1":lambda_1,
+                     "lambda_2":lambda_2,
+                     "normalize":normalize}
         # 实例化模型 并训练模型
-        Regressor = BayesianRidge(**parameter)
+        Regressor = BayesianRidge(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -1342,9 +1275,9 @@ class myBayesianoptimazation():
         normalize_y = [True,False][int(normalize_y)]
         
         # 模型参数设置
-        parameter  = {alpha=alpha,normalize_y=normalize_y,random_state=random_seed}
+        parameterDict  = {"alpha":alpha,"normalize_y":normalize_y,"random_state":random_seed}
         # 实例化模型 并训练模型
-        Regressor = GaussianProcessRegressor(**parameter)
+        Regressor = GaussianProcessRegressor(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
@@ -1395,9 +1328,9 @@ class myBayesianoptimazation():
         penalty = ["l1","l2"][int(penalty)]
        
         # 模型参数设置
-        parameter = {"penalty":penalty,"tol":tol,"C":C , "warm_start":False , "random_state":random_seed , "n_jobs":-1 , "solver" :'liblinear'}
+        parameterDict = {"penalty":penalty,"tol":tol,"C":C , "warm_start":False , "random_state":random_seed , "n_jobs":-1 , "solver" :'liblinear'}
         # 实例化模型 并训练模型
-        Regressor = LogisticRegression(**parameter)
+        Regressor = LogisticRegression(**parameterDict)
         # 如果kFold数值大于1 则启用 k-fold cross-validation
         if kFold <= 1:
             kFold = 1 
